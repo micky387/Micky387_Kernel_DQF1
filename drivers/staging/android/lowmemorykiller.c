@@ -45,6 +45,7 @@
 #include <linux/fs.h>
 
 #include <linux/ratelimit.h>
+#include <trace/events/memkill.h>
 
 #define LMK_COUNT_READ
 
@@ -358,6 +359,9 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 			     nr_cma_free, sc->priority);
 #endif
 		lowmem_deathpending_timeout = jiffies + HZ;
+		trace_lmk_kill(selected->pid, selected->comm,
+				selected_oom_score_adj, selected_tasksize,
+				min_score_adj);
 		send_sig(SIGKILL, selected, 0);
 		set_tsk_thread_flag(selected, TIF_MEMDIE);
 		rem -= selected_tasksize;
