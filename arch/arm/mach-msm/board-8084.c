@@ -472,8 +472,6 @@ void __init apq8084_add_drivers(void)
 		msm_clock_init(&apq8084_rumi_clock_init_data);
 	else
 		msm_clock_init(&apq8084_clock_init_data);
-	tsens_tm_init_driver();
-	msm_thermal_device_init();
 }
 
 static void __init apq8084_map_io(void)
