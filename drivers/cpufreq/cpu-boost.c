@@ -30,14 +30,18 @@ struct cpu_sync {
 	struct task_struct *thread;
 	wait_queue_head_t sync_wq;
 	struct delayed_work boost_rem;
+#ifndef CONFIG_CPU_BOOST_DISABLE_INPUTBOOST
 	struct delayed_work input_boost_rem;
+#endif
 	int cpu;
 	spinlock_t lock;
 	bool pending;
 	atomic_t being_woken;
 	int src_cpu;
 	unsigned int boost_min;
+#ifndef CONFIG_CPU_BOOST_DISABLE_INPUTBOOST
 	unsigned int input_boost_min;
+#endif
 	unsigned int task_load;
 };
 
@@ -51,7 +55,9 @@ extern bool gir_boost_disable;
 static DEFINE_PER_CPU(struct cpu_sync, sync_info);
 static struct workqueue_struct *cpu_boost_wq;
 
+#ifndef CONFIG_CPU_BOOST_DISABLE_INPUTBOOST
 static struct work_struct input_boost_work;
+#endif
 
 static unsigned int boost_ms;
 module_param(boost_ms, uint, 0644);
@@ -59,11 +65,13 @@ module_param(boost_ms, uint, 0644);
 static unsigned int sync_threshold;
 module_param(sync_threshold, uint, 0644);
 
+#ifndef CONFIG_CPU_BOOST_DISABLE_INPUTBOOST
 static unsigned int input_boost_freq;
 module_param(input_boost_freq, uint, 0644);
 
 static unsigned int input_boost_ms = 40;
 module_param(input_boost_ms, uint, 0644);
+#endif
 
 static unsigned int migration_load_threshold = 15;
 module_param(migration_load_threshold, uint, 0644);
@@ -71,8 +79,10 @@ module_param(migration_load_threshold, uint, 0644);
 static bool load_based_syncs;
 module_param(load_based_syncs, bool, 0644);
 
+#ifndef CONFIG_CPU_BOOST_DISABLE_INPUTBOOST
 static u64 last_input_time;
 #define MIN_INPUT_INTERVAL (150 * USEC_PER_MSEC)
+#endif
 
 /*
  * The CPUFREQ_ADJUST notifier is used to override the current policy min to
@@ -92,15 +102,25 @@ static int boost_adjust_notify(struct notifier_block *nb, unsigned long val,
 	unsigned int cpu = policy->cpu;
 	struct cpu_sync *s = &per_cpu(sync_info, cpu);
 	unsigned int b_min = s->boost_min;
+#ifndef CONFIG_CPU_BOOST_DISABLE_INPUTBOOST
 	unsigned int ib_min = s->input_boost_min;
+#endif
 	unsigned int min;
 
 	switch (val) {
 	case CPUFREQ_ADJUST:
+#ifndef CONFIG_CPU_BOOST_DISABLE_INPUTBOOST
 		if (!b_min && !ib_min)
+#else
+		if (!b_min)
+#endif
 			break;
 
+#ifndef CONFIG_CPU_BOOST_DISABLE_INPUTBOOST
 		min = max(b_min, ib_min);
+#else
+		min = b_min;
+#endif
 
 		pr_debug("CPU%u policy min before boost: %u kHz\n",
 			 cpu, policy->min);
@@ -135,6 +155,7 @@ static void do_boost_rem(struct work_struct *work)
 	cpufreq_update_policy(s->cpu);
 }
 
+#ifndef CONFIG_CPU_BOOST_DISABLE_INPUTBOOST
 static void do_input_boost_rem(struct work_struct *work)
 {
 	struct cpu_sync *s = container_of(work, struct cpu_sync,
@@ -145,6 +166,7 @@ static void do_input_boost_rem(struct work_struct *work)
 	/* Force policy re-evaluation to trigger adjust notifier. */
 	cpufreq_update_policy(s->cpu);
 }
+#endif
 
 static int boost_mig_sync_thread(void *data)
 {
@@ -280,6 +302,7 @@ static struct notifier_block boost_migration_nb = {
 	.notifier_call = boost_migration_notify,
 };
 
+#ifndef CONFIG_CPU_BOOST_DISABLE_INPUTBOOST
 static void do_input_boost(struct work_struct *work)
 {
 	unsigned int i, ret;
@@ -403,10 +426,15 @@ static struct input_handler cpuboost_input_handler = {
 	.name           = "cpu-boost",
 	.id_table       = cpuboost_ids,
 };
+#endif
 
 static int cpu_boost_init(void)
 {
+#ifndef CONFIG_CPU_BOOST_DISABLE_INPUTBOOST
 	int cpu, ret;
+#else
+	int cpu;
+#endif
 	struct cpu_sync *s;
 
 	cpufreq_register_notifier(&boost_adjust_nb, CPUFREQ_POLICY_NOTIFIER);
@@ -415,8 +443,9 @@ static int cpu_boost_init(void)
 	if (!cpu_boost_wq)
 		return -EFAULT;
 
+#ifndef CONFIG_CPU_BOOST_DISABLE_INPUTBOOST
 	INIT_WORK(&input_boost_work, do_input_boost);
-
+#endif
 	for_each_possible_cpu(cpu) {
 		s = &per_cpu(sync_info, cpu);
 		s->cpu = cpu;
@@ -424,7 +453,9 @@ static int cpu_boost_init(void)
 		atomic_set(&s->being_woken, 0);
 		spin_lock_init(&s->lock);
 		INIT_DELAYED_WORK(&s->boost_rem, do_boost_rem);
+#ifndef CONFIG_CPU_BOOST_DISABLE_INPUTBOOST
 		INIT_DELAYED_WORK(&s->input_boost_rem, do_input_boost_rem);
+#endif
 		s->thread = kthread_run(boost_mig_sync_thread, (void *)cpu,
 					"boost_sync/%d", cpu);
 		set_cpus_allowed(s->thread, *cpumask_of(cpu));
@@ -432,7 +463,9 @@ static int cpu_boost_init(void)
 	atomic_notifier_chain_register(&migration_notifier_head,
 					&boost_migration_nb);
 
+#ifndef CONFIG_CPU_BOOST_DISABLE_INPUTBOOST
 	ret = input_register_handler(&cpuboost_input_handler);
+#endif
 	return 0;
 }
 late_initcall(cpu_boost_init);
