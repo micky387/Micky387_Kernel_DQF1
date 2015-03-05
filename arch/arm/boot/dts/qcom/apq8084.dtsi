@@ -86,6 +86,11 @@
 			qcom,memblock-reserve = <0x3e9e0000 0x100000>;
 		};
 	};
+	
+	kexec_hardboot-hole {
+		compatible = "qcom,msm-contig-mem";
+		qcom,memblock-reserve = <0x3e9df000 0x1000>;
+	};
 
 	intc: interrupt-controller@f9000000 {
 		compatible = "qcom,msm-qgic2";
