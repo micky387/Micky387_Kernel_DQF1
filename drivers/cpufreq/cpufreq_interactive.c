@@ -550,6 +550,7 @@ static void exit_mode(void)
 
 static int need_retry;
 
+#define MAX_LOCAL_LOAD 100
 static void cpufreq_interactive_timer(unsigned long data)
 {
 	u64 now;
@@ -618,7 +619,8 @@ static void cpufreq_interactive_timer(unsigned long data)
 	pcpu->policy->util = cpu_load;
 
 	if (cpu_load >= go_hispeed_load || boosted) {
-		if (pcpu->target_freq < hispeed_freq) {
+		if (pcpu->target_freq < hispeed_freq &&
+		    cpu_load <= MAX_LOCAL_LOAD) {
 			new_freq = hispeed_freq;
 		} else {
 			new_freq = choose_freq(pcpu, loadadjfreq);
@@ -658,8 +660,9 @@ static void cpufreq_interactive_timer(unsigned long data)
 			new_freq = input_boost_freq;
 	}
 
-	if (pcpu->target_freq >= hispeed_freq &&
-	    new_freq > pcpu->target_freq &&
+	if (cpu_load <= MAX_LOCAL_LOAD &&
+	    pcpu->policy->cur >= hispeed_freq &&
+	    new_freq > pcpu->policy->cur &&
 	    now - pcpu->hispeed_validate_time <
 	    freq_to_above_hispeed_delay(pcpu->target_freq)) {
 		trace_cpufreq_interactive_notyet(
