@@ -45,6 +45,7 @@
 #include <linux/fs.h>
 
 #include <linux/ratelimit.h>
+#include <linux/zcache.h>
 
 #define LMK_COUNT_READ
 
@@ -435,7 +436,7 @@ static int android_oom_handler(struct notifier_block *nb,
 
 	nr_cma_inactive_file = global_page_state(NR_CMA_INACTIVE_FILE);
 	nr_cma_active_file = global_page_state(NR_CMA_ACTIVE_FILE);
-	other_file = global_page_state(NR_FILE_PAGES) -
+	other_file = global_page_state(NR_FILE_PAGES) + zcache_pages() -
 					global_page_state(NR_SHMEM) -
 					total_swapcache_pages() -
 					nr_cma_inactive_file -
