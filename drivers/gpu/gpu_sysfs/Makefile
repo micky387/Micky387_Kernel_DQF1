@@ -32,9 +32,9 @@ endif
 # specific file is not defined OR 
 # picked using the PLATFORM configs.
 ifndef GPU_SYSFS_TARGET_FILE_DEFINED
-$(warning **** Make sure target file is defined. \
-               Check the TARGET and GPU configs in Makefile and Kernel Config. \
-               Module won't work without target file. ****)
+#$(warning **** Make sure target file is defined. \
+#               Check the TARGET and GPU configs in Makefile and Kernel Config. \
+#               Module won't work without target file. ****)
 endif
 
 
