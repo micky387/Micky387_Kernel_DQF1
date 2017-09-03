@@ -8,3 +8,4 @@ make -C $(pwd) O=output apq8084_sec_defconfig VARIANT_DEFCONFIG=apq8084_sec_tblt
 make -j5 -C $(pwd) O=output
 
 cp output/arch/arm/boot/Image $(pwd)/arch/arm/boot/zImage
+./tools/dtbTool -s 4096 -o ./output/arch/arm/boot/dt.img -p ./output/scripts/dtc/ ./output/arch/arm/boot/dts/
