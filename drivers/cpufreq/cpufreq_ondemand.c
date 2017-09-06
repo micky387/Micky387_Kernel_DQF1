@@ -27,7 +27,7 @@
 #define MIN_FREQUENCY_UP_THRESHOLD		(11)
 #define MAX_FREQUENCY_UP_THRESHOLD		(100)
 
-extern bool cpuboost_enable;
+//extern bool cpuboost_enable;
 
 static DEFINE_PER_CPU(struct od_cpu_dbs_info_s, od_cpu_dbs_info);
 
@@ -487,7 +487,7 @@ static int od_init(struct dbs_data *dbs_data)
 	u64 idle_time;
 	int cpu;
 
-	if (cpuboost_enable) cpuboost_enable = false;
+//	if (cpuboost_enable) cpuboost_enable = false;
 	
 	tuners = kzalloc(sizeof(*tuners), GFP_KERNEL);
 	if (!tuners) {
