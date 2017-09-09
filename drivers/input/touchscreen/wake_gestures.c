@@ -50,7 +50,7 @@
 
 /* shamu */
 #define SWEEP_Y_MAX             2559
-#define SWEEP_X_MAX             1439
+#define SWEEP_X_MAX             1531
 #define SWEEP_EDGE		130
 #define SWEEP_Y_LIMIT           SWEEP_Y_MAX-SWEEP_EDGE
 #define SWEEP_X_LIMIT           SWEEP_X_MAX-SWEEP_EDGE
@@ -60,8 +60,8 @@
 #define SWEEP_X_START		720
 #define SWEEP_X_FINAL           360
 #define SWEEP_Y_NEXT            180
-#define DT2S_Y_LIMIT	100
-#define DT2S_X_LIMIT	1440
+#define DT2S_Y_LIMIT	2560
+#define DT2S_X_LIMIT	1532
 #define DT2W_FEATHER		200
 #define DT2S_FEATHER		150
 #define DT2W_TIME 		700
