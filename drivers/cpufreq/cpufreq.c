@@ -30,6 +30,10 @@
 #include <linux/tick.h>
 #include <trace/events/power.h>
 
+#ifdef CONFIG_CPUFREQ_HARDLIMIT
+#include <linux/cpufreq_hardlimit.h>
+#endif
+
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
  * level driver of CPUFreq support, and its spinlock. This lock
@@ -334,25 +338,28 @@ EXPORT_SYMBOL_GPL(cpufreq_notify_transition);
 #ifdef CONFIG_CPUFREQ_HARDLIMIT
 extern void update_scaling_limits(unsigned int freq_min, unsigned int freq_max)
 {
+	int cpu;
 	struct cpufreq_policy *policy;
 
-	// Updating CPU0 policy only, since all other CPUs will be set accordingly
-	// --> "cpufreq: force cpuN policy to match cpu0 when setting min freq" (Imoseyon)
-
-	policy = cpufreq_cpu_get(0);
-	if (policy != NULL) {
-		#ifdef CONFIG_CPUFREQ_HARDLIMIT_DEBUG
-		pr_info("[HARDLIMIT] cpufreq.c - update_scaling_limits : old_min = %u / old_max = %u / new_min = %u / new_max = %u \n",
-				policy->min,
-				policy->max,
-				freq_min,
-				freq_max
-			);
+	for_each_possible_cpu(cpu) {
+		#ifdef CPUFREQ_HARDLIMIT_DEBUG
+		pr_info("[HARDLIMIT] cpufreq.c cpu%d \n", cpu);
 		#endif
-		policy->user_policy.min = policy->min = freq_min;
-		policy->user_policy.max = policy->max = freq_max;
+		policy = cpufreq_cpu_get(cpu);
+		if (policy != NULL) {
+			#ifdef CPUFREQ_HARDLIMIT_DEBUG
+			pr_info("[HARDLIMIT] cpufreq.c cpu%d - update_scaling_limits : old_min = %u / old_max = %u / new_min = %u / new_max = %u \n",
+					cpu,
+					policy->min,
+					policy->max,
+					freq_min,
+					freq_max
+				);
+			#endif
+			policy->user_policy.min = policy->min = freq_min;
+			policy->user_policy.max = policy->max = freq_max;
+		}
 	}
-	return;
 }
 #endif
 
@@ -2252,10 +2259,10 @@ int cpufreq_update_policy(unsigned int cpu)
 	pr_debug("updating policy for CPU %u\n", cpu);
 	memcpy(&new_policy, policy, sizeof(*policy));
 #ifdef CONFIG_CPUFREQ_HARDLIMIT
-	#ifdef CONFIG_CPUFREQ_HARDLIMIT_DEBUG
+	#ifdef CPUFREQ_HARDLIMIT_DEBUG
 	pr_info("[HARDLIMIT] cpufreq.c update_policy : old_min = %u / old_max = %u / tried_min = %u / tried_max = %u / new_min = %u / new_max = %u \n",
-			policy->min,
-			policy->max,
+			policy.min,
+			policy.max,
 			policy->user_policy.min,
 			policy->user_policy.max,
 			check_cpufreq_hardlimit(policy->user_policy.min),
