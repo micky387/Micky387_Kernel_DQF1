@@ -588,7 +588,7 @@ config ZPOOL
 
 config ZBUD
 	tristate
-	default n
+	default y
 	help
 	  A special purpose allocator for storing compressed pages.
 	  It is designed to store up to two compressed pages per physical
