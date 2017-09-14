@@ -2288,7 +2288,7 @@ static inline void *new_slab_objects(struct kmem_cache *s, gfp_t flags,
 
 	page = new_slab(s, flags, node);
 	if (page) {
-		c = raw_cpu_ptr(s->cpu_slab);
+		c = this_cpu_ptr(s->cpu_slab);
 		if (c->page)
 			flush_slab(s, c);
 
