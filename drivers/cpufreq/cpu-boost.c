@@ -26,6 +26,10 @@
 #include <linux/input.h>
 #include <linux/time.h>
 
+#ifdef CONFIG_CPUFREQ_HARDLIMIT
+#include <linux/cpufreq_hardlimit.h>
+#endif
+
 struct cpu_sync {
 	struct task_struct *thread;
 	wait_queue_head_t sync_wq;
@@ -192,7 +196,11 @@ static int boost_mig_sync_thread(void *data)
 
 		cancel_delayed_work_sync(&s->boost_rem);
 
+#ifdef CONFIG_CPUFREQ_HARDLIMIT
+        s->boost_min = check_cpufreq_hardlimit(req_freq);
+#else
 		s->boost_min = req_freq;
+#endif
 
 		/* Force policy re-evaluation to trigger adjust notifier. */
 		get_online_cpus();

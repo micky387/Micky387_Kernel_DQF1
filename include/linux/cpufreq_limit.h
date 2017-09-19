@@ -13,7 +13,8 @@
 struct cpufreq_limit_handle;
 
 #ifdef CONFIG_CPU_FREQ_LIMIT
-
+#define MAX_FREQ_LIMIT	2649600
+#define MIN_FREQ_LIMIT	300000
 #ifdef CONFIG_SEC_PM
 #define SUSPEND_BOOST	1497600
 #endif
