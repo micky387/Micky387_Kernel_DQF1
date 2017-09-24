@@ -2,6 +2,8 @@
  * Author: Chad Froebel <chadfroebel@gmail.com>
  *
  * Ported to Note 3 (n9005) and extended : Jean-Pierre Rasquin <yank555.lu@gmail.com>
+ * 
+ * Edited by Micky387 for Samsung Note 4 / Edge (SM-N910* - SM-N915*)
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -23,6 +25,16 @@
  *   0 - disabled (default)
  *   1 - substitute AC to USB
  *   2 - use custom mA configured through sysfs interface (see below)
+ *
+ * /sys/kernel/fast_charge/use_mtp_during_fast_charge (rw)
+ *
+ *   0 - disabled
+ *   1 - enabled (default)
+ *
+ * /sys/kernel/fast_charge/screen_on_current_limit (rw)
+ *
+ *   0 - disabled
+ *   1 - enabled (default)
  *
  * /sys/kernel/fast_charge/ac_charge_level (rw)
  *
@@ -63,6 +75,7 @@
  *
  */
 
+#include <linux/module.h>
 #include <linux/kobject.h>
 #include <linux/sysfs.h>
 #include <linux/fastchg.h>
@@ -85,14 +98,81 @@ static ssize_t force_fast_charge_store(struct kobject *kobj, struct kobj_attribu
 	switch(new_force_fast_charge) {
 		case FAST_CHARGE_DISABLED:
 		case FAST_CHARGE_FORCE_AC:
-		case FAST_CHARGE_FORCE_CUSTOM_MA:		force_fast_charge = new_force_fast_charge;
-								return count;
-		default:					return -EINVAL;
+		case FAST_CHARGE_FORCE_CUSTOM_MA:
+				force_fast_charge = new_force_fast_charge;
+				return count;
+		default:
+				return -EINVAL;
 	}
 }
 
 static struct kobj_attribute force_fast_charge_attribute =
 __ATTR(force_fast_charge, 0666, force_fast_charge_show, force_fast_charge_store);
+
+int use_mtp_during_fast_charge;
+
+/* sysfs interface for "use_mtp_during_fast_charge" */
+static ssize_t use_mtp_during_fast_charge_show(struct kobject *kobj,
+		struct kobj_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", use_mtp_during_fast_charge);
+}
+
+static ssize_t use_mtp_during_fast_charge_store(struct kobject *kobj,
+		struct kobj_attribute *attr, const char *buf, size_t count)
+{
+
+	int new_use_mtp_during_fast_charge;
+
+	sscanf(buf, "%du", &new_use_mtp_during_fast_charge);
+
+	switch(new_use_mtp_during_fast_charge) {
+		case USE_MTP_DURING_FAST_CHARGE_DISABLED:
+		case USE_MTP_DURING_FAST_CHARGE_ENABLED:
+			use_mtp_during_fast_charge = new_use_mtp_during_fast_charge;
+			return count;
+		default:
+			return -EINVAL;
+	}
+}
+
+static struct kobj_attribute use_mtp_during_fast_charge_attribute =
+	__ATTR(use_mtp_during_fast_charge, 0666,
+		use_mtp_during_fast_charge_show,
+		use_mtp_during_fast_charge_store);
+
+int screen_on_current_limit;
+
+/* sysfs interface for "screen_on_current_limit" */
+static ssize_t screen_on_current_limit_show(struct kobject *kobj,
+		struct kobj_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", screen_on_current_limit);
+}
+
+static ssize_t screen_on_current_limit_store(struct kobject *kobj,
+		struct kobj_attribute *attr, const char *buf, size_t count)
+{
+
+	int new_screen_on_current_limit;
+
+	sscanf(buf, "%du", &new_screen_on_current_limit);
+
+	switch(new_screen_on_current_limit) {
+		case SCREEN_ON_CURRENT_LIMIT_DISABLED:
+		case SCREEN_ON_CURRENT_LIMIT_ENABLED:
+			screen_on_current_limit = new_screen_on_current_limit;
+			return count;
+		default:
+			return -EINVAL;
+	}
+}
+
+static struct kobj_attribute screen_on_current_limit_attribute =
+	__ATTR(screen_on_current_limit, 0666,
+		screen_on_current_limit_show,
+		screen_on_current_limit_store);
+
 
 /* sysfs interface for "ac_charge_level" */
 
@@ -131,9 +211,11 @@ static ssize_t ac_charge_level_store(struct kobject *kobj, struct kobj_attribute
 			case AC_CHARGE_1800:
 			case AC_CHARGE_1900:
 			case AC_CHARGE_2000:
-			case AC_CHARGE_2100:		ac_charge_level = new_ac_charge_level;
-							return count;
-			default:			return -EINVAL;
+			case AC_CHARGE_2100:
+					ac_charge_level = new_ac_charge_level;
+					return count;
+			default:
+					return -EINVAL;
 
 		}
 
@@ -178,9 +260,11 @@ static ssize_t usb_charge_level_store(struct kobject *kobj, struct kobj_attribut
 			case USB_CHARGE_700:
 			case USB_CHARGE_800:
 			case USB_CHARGE_900:
-			case USB_CHARGE_1000:		usb_charge_level = new_usb_charge_level;
-							return count;
-			default:			return -EINVAL;
+			case USB_CHARGE_1000:
+					usb_charge_level = new_usb_charge_level;
+					return count;
+			default:
+					return -EINVAL;
 		}
 
 	}
@@ -223,9 +307,11 @@ static ssize_t wireless_charge_level_store(struct kobject *kobj, struct kobj_att
 			case WIRELESS_CHARGE_900:
 			case WIRELESS_CHARGE_1000:
 			case WIRELESS_CHARGE_1100:
-			case WIRELESS_CHARGE_1200:	wireless_charge_level = new_wireless_charge_level;
-							return count;
-			default:			return -EINVAL;
+			case WIRELESS_CHARGE_1200:
+					wireless_charge_level = new_wireless_charge_level;
+					return count;
+			default:
+					return -EINVAL;
 		}
 
 	}
@@ -300,8 +386,10 @@ static ssize_t info_show(struct kobject *kobj, struct kobj_attribute *attr, char
 {
 	return sprintf(
 		buf,
-		"Forced Fast Charge for Samsung Note 3 %s\n\n"
+		"Forced Fast Charge for Samsung Galaxy Note 4/Edge %s\n\n"
 		"Fast charge mode      : %s\n"
+		"MTP while charging mode : %s\n"
+		"Screen on Current Limit mode : %s\n"
 		"Custom  AC level      : %dmA/h\n"
 		"Custom USB level      : %dmA/h\n"
 		"Custom Wireless level : %dmA/h\n"
@@ -310,9 +398,13 @@ static ssize_t info_show(struct kobject *kobj, struct kobj_attribute *attr, char
 		"Valid USB levels      : %s\n"
 		"Valid Wireless levels : %s\n",
 		 FAST_CHARGE_VERSION,
-		 force_fast_charge == FAST_CHARGE_DISABLED 	   ? "0 - Disabled (default)" :
+		 force_fast_charge == FAST_CHARGE_DISABLED 	       ? "0 - Disabled (default)" :
 		(force_fast_charge == FAST_CHARGE_FORCE_AC         ? "1 - Use stock AC level on USB" :
 		(force_fast_charge == FAST_CHARGE_FORCE_CUSTOM_MA  ? "2 - Use custom mA on AC and USB" : "Problem : value out of range")),
+		 use_mtp_during_fast_charge          == USE_MTP_DURING_FAST_CHARGE_DISABLED           ? "0 - Disabled" :
+		(use_mtp_during_fast_charge          == USE_MTP_DURING_FAST_CHARGE_ENABLED            ? "1 - Enabled" : "Problem : value out of range"),
+		 screen_on_current_limit          == SCREEN_ON_CURRENT_LIMIT_DISABLED           ? "0 - Disabled" :
+		(screen_on_current_limit          == SCREEN_ON_CURRENT_LIMIT_ENABLED            ? "1 - Enabled" : "Problem : value out of range"),
 		 ac_charge_level,
 		 usb_charge_level,
 		 wireless_charge_level,
@@ -341,6 +433,8 @@ static struct kobject *force_fast_charge_kobj;
 
 static struct attribute *force_fast_charge_attrs[] = {
 	&force_fast_charge_attribute.attr,
+	&use_mtp_during_fast_charge_attribute.attr,
+	&screen_on_current_limit_attribute.attr,
 	&ac_charge_level_attribute.attr,
 	&usb_charge_level_attribute.attr,
 	&wireless_charge_level_attribute.attr,
@@ -362,6 +456,8 @@ int force_fast_charge_init(void)
 	int force_fast_charge_retval;
 
 	force_fast_charge     = FAST_CHARGE_DISABLED; /* Forced fast charge disabled by default */
+	use_mtp_during_fast_charge = USE_MTP_DURING_FAST_CHARGE_ENABLED; /* Use MTP during fast charge, enabled by default */
+	screen_on_current_limit = SCREEN_ON_CURRENT_LIMIT_ENABLED; /* Use Samsung Screen ON current limit while charging, enabled by default */
 	ac_charge_level       = AC_CHARGE_1800;	      /* Default AC charge level to 1800mA/h    */
 	usb_charge_level      = USB_CHARGE_460;	      /* Default USB charge level to 460mA/h    */
 	wireless_charge_level = WIRELESS_CHARGE_650;  /* Default USB charge level to 650mA/h    */
