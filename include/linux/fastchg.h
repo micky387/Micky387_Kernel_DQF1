@@ -22,7 +22,7 @@
 #define AC_LEVELS  "1000 1100 1200 1300 1400 1500 1600 1700 1800 1900 2000 2100"
 #define USB_LEVELS "460 500 600 700 800 900 1000"
 #define WIRELESS_LEVELS "650 800 900 1000 1100 1200"
-#define ANY_LEVELS "0 to 2100"
+#define ANY_LEVELS "0 to 2200"
 
 extern int force_fast_charge;
 
@@ -51,6 +51,7 @@ extern int ac_charge_level;
 #define AC_CHARGE_1900 1900
 #define AC_CHARGE_2000 2000
 #define AC_CHARGE_2100 2100
+#define AC_CHARGE_2200 2200
 
 extern int usb_charge_level;
 
@@ -71,7 +72,7 @@ extern int wireless_charge_level;
 #define WIRELESS_CHARGE_1100 1100
 #define WIRELESS_CHARGE_1200 1200
 
-#define MAX_CHARGE_LEVEL 2100	/* Whatever happens, this is the limit */
+#define MAX_CHARGE_LEVEL 2200	/* Whatever happens, this is the limit */
 
 extern int failsafe;
 #define FAIL_SAFE_ENABLED 1	/* default */
